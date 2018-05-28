@@ -59,7 +59,7 @@ def backup_saves(init):
                         name_backup = f"{name_save}-BACKUP_{timeStamp}{name_extension}"
                         path_backup = path.join(subDirBackup, name_backup)
 
-                        # Copies original to path_backup
+                        # Copies original save to path_backup as name_backup
                         copyfile(path_save, path_backup)
                         print(f"{timePrint}   saving backup of {name_save}:")
                         spacing = " " * len(timePrint)
