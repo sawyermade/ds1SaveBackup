@@ -6,7 +6,7 @@ from datetime import datetime
 """
 automatic DSR backup file creation
 (1) creates backups upon start
-(2) creates backups every MINUTES_X minutes defined below. Default: 5
+(2) creates backups every MINUTES minutes defined below. Default: 5
 note: the documents folder has to be set as FOLDER_documents below. Default: 'documents'
 note: auto save only for files which have been modified in the last 10 minutes
 note: should be compiled using PyInstaller
@@ -15,50 +15,69 @@ note: should be compiled using PyInstaller
 # variables
 # insert the name of the windows documents folder
 # depends either on locale (by default) or user setting
-FOLDER_documents = "documents"
-MINUTES_X = 5
-
+DOCSNAME = "documents"
+MINUTES = 5
 
 # Constants
-PATH_UserFolder = path.expandvars("%userprofile%")
-PATH_DSR = path.join(PATH_UserFolder, FOLDER_documents, "NBGI", "DARK SOULS REMASTERED")
+UserPath = path.expandvars("%userprofile%")
+DsrPath = path.join(UserPath, DOCSNAME, "NBGI", "DARK SOULS REMASTERED")
 
 def backup_saves(init):
-    for path_dir in listdir(PATH_DSR):
-        # find save folder
-        path_dir_full = path.join(PATH_DSR, path_dir)
-        print(path_dir_full)
-        if not path.isfile(path_dir_full):
-            for file in (x for x in listdir(path_dir_full) if path.isfile(path.join(path_dir_full, x))):
-                # get name of the save
-                name_save, name_extension = path.splitext(file)
-                path_dir_backup = path.join(path_dir_full, f"{name_save}-BACKUP")
-                path_save = path.join(path_dir_full, file)
-                # get timestamps
-                tSave = path.getmtime(path_save)
-                tNow = time()
-                # save backup
-                if init or (tNow - tSave) < 600:
-                    # create folder with save name if it doesn't exist yet
-                    if not path.exists(path_dir_backup):
-                        makedirs(path_dir_backup)
-                    # create backup file
-                    timeStamp = strftime("%Y_%H_%M_%S", localtime(tNow))
-                    timePrint = strftime("%H:%M", localtime(tNow))
-                    name_backup = f"{name_save}-BACKUP_{timeStamp}{name_extension}"
-                    path_backup = path.join(path_dir_backup, name_backup)
-                    copyfile(path_save, path_backup)
-                    print(f"{timePrint}   saving backup of {name_save}:")
-                    spacing = " " * len(timePrint)
-                    print(f"{spacing}   -> {name_backup}")
+    # Goes through sub directories in DSR save folder
+    for subDir in listdir(DsrPath):
+        
+        # find and print save folder
+        subDirFull = path.join(DsrPath, subDir)
+        print(subDirFull)
+
+        # Makes sure subDirFull is a directory
+        if path.isdir(subDirFull):
+            # Iterates through file
+            for file in listdir(subDirFull):
+                # Makes sure file is a file    
+                if path.isfile(file):
+                    # Get name and path for original save
+                    name_save, name_extension = path.splitext(file)
+                    path_save = path.join(subDirFull, file)
+                    subDirBackup = path.join(subDirFull, f"{name_save}-BACKUP")
+                    
+                    # get timestamp of original save file
+                    tSave = path.getmtime(path_save)
+                    tNow = time()
+
+                    # If init or last save was less than 600 seconds
+                    if init or (tNow - tSave) < 600:
+                        # If backup dir doesnt exist, makes it
+                        if not path.exists(subDirBackup):
+                            makedirs(subDirBackup)
+                        
+                        # Sets time stamp for backup file and prints it
+                        timeStamp = strftime("%Y_%H_%M_%S", localtime(tNow))
+                        timePrint = strftime("%H:%M", localtime(tNow))
+
+                        # Sets backup's name and path
+                        name_backup = f"{name_save}-BACKUP_{timeStamp}{name_extension}"
+                        path_backup = path.join(subDirBackup, name_backup)
+
+                        # Copies original to path_backup
+                        copyfile(path_save, path_backup)
+                        print(f"{timePrint}   saving backup of {name_save}:")
+                        spacing = " " * len(timePrint)
+                        print(f"{spacing}   -> {name_backup}")
 
 def main():
+    # Initializes first run
     backup_saves(True)
+    
+    # Runs until keyboard interrupt, ctrl+c
     while True:
+        # Backs up save, init = false
         backup_saves(False)
-        iSleep = 60 * MINUTES_X
-        print(f"\nsleeping for {MINUTES_X} minutes\n")
-        sleep(iSleep)
+
+        # Sleep time in seconds
+        sleepSeconds = 60 * MINUTES
+        print(f"\nsleeping for {MINUTES} minutes\n")
+        sleep(sleepSeconds)
 
 if __name__ == '__main__':
     main()
